@@ -60,14 +60,38 @@
           </section>
 
           <div class="action-row">
-            <button class="primary-button" type="button">Follow</button>
+            <button class="primary-button" id="editProfileButton" type="button" aria-pressed="false">Follow</button>
             <button class="secondary-button" type="button">Message</button>
-            <button class="ghost-icon" type="button" aria-label="More options">
+            <button class="ghost-icon" id="profileOptionsButton" type="button" aria-label="More options">
               <svg viewBox="0 0 24 24" fill="none"><path d="M7 12h.01M12 12h.01M17 12h.01" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
             </button>
           </div>
 
           <div class="bio-block" id="bioBlock"></div>
+
+          <section class="creator-workspace" id="creatorWorkspace" aria-labelledby="creatorWorkspaceTitle" hidden>
+            <header class="creator-workspace-heading">
+              <div>
+                <p class="profile-edit-kicker">Creator view</p>
+                <h2 id="creatorWorkspaceTitle">Manage your profile</h2>
+              </div>
+            </header>
+            <div class="creator-workspace-actions">
+              <button class="photo-edit-toggle" id="editProfileDetailsButton" type="button">Edit profile details</button>
+              <div class="photo-edit-tools">
+                <button class="photo-edit-toggle" id="photoEditToggle" type="button" aria-pressed="false">
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h2l1.2-1.5h4.6L15.5 6h2A2.5 2.5 0 0 1 20 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5v-9Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="12.5" r="3.2" stroke="currentColor" stroke-width="1.8"/></svg>
+                  <span>Edit thumbnails</span>
+                </button>
+                <button class="thumbnail-bulk-button" id="saveAllThumbnailsButton" type="button" disabled>Save all</button>
+                <button class="thumbnail-bulk-button thumbnail-reset-all" id="resetAllThumbnailsButton" type="button">Reset all thumbnails</button>
+                <button class="profile-photo-button" id="profilePhotoButton" type="button">Change profile photo</button>
+                <input id="profilePhotoPicker" type="file" accept="image/*" hidden />
+                <input id="thumbnailImagePicker" type="file" accept="image/*" hidden />
+              </div>
+            </div>
+            <p class="photo-save-status" id="photoSaveStatus" role="status" aria-live="polite"></p>
+          </section>
 
           <div class="tabs" aria-label="Profile tabs">
             <button class="tab active" type="button" aria-label="Video grid">
@@ -79,16 +103,6 @@
             <button class="tab" type="button" aria-label="Favorites">
               <svg viewBox="0 0 24 24" fill="none"><path d="M7 4h10a2 2 0 0 1 2 2v14l-7-4-7 4V6a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
             </button>
-          </div>
-
-          <div class="photo-edit-tools">
-            <button class="photo-edit-toggle" id="photoEditToggle" type="button" aria-pressed="false">
-              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h2l1.2-1.5h4.6L15.5 6h2A2.5 2.5 0 0 1 20 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5v-9Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="12.5" r="3.2" stroke="currentColor" stroke-width="1.8"/></svg>
-              <span>Edit photos</span>
-            </button>
-            <button class="profile-photo-button" id="profilePhotoButton" type="button" hidden>Change profile photo</button>
-            <input id="profilePhotoPicker" type="file" accept="image/*" hidden />
-            <input id="thumbnailImagePicker" type="file" accept="image/*" hidden />
           </div>
 
           <div class="thumb-grid" id="thumbGrid" aria-live="polite"></div>
@@ -177,6 +191,71 @@
         </div>
         <div class="comment-list" id="commentList"></div>
       </aside>
+
+      <dialog class="profile-edit-dialog profile-options-dialog" id="profileOptionsDialog" aria-labelledby="profileOptionsTitle">
+        <div class="profile-edit-heading">
+          <div>
+            <p class="profile-edit-kicker">Profile options</p>
+            <h2 id="profileOptionsTitle">More options</h2>
+          </div>
+          <button class="icon-button profile-edit-close" id="closeProfileOptions" type="button" aria-label="Close profile options">×</button>
+        </div>
+        <button class="profile-save-button profile-creator-entry" id="enterCreatorModeButton" type="button">Switch to creator view</button>
+      </dialog>
+
+      <dialog class="profile-edit-dialog" id="profileEditDialog" aria-labelledby="profileEditTitle">
+        <form id="profileEditForm">
+          <div class="profile-edit-heading">
+            <div>
+              <p class="profile-edit-kicker">Your profile</p>
+              <h2 id="profileEditTitle">Edit profile</h2>
+            </div>
+            <button class="icon-button profile-edit-close" id="closeProfileEdit" type="button" aria-label="Close profile editor">×</button>
+          </div>
+          <label class="profile-edit-field">
+            <span>Name</span>
+            <input id="profileNameInput" type="text" maxlength="40" autocomplete="name" required />
+          </label>
+          <label class="profile-edit-field">
+            <span>Username</span>
+            <div class="profile-handle-input"><span>@</span><input id="profileHandleInput" type="text" maxlength="24" autocomplete="off" required /></div>
+          </label>
+          <label class="profile-edit-field">
+            <span>Bio</span>
+            <textarea id="profileBioInput" rows="4" maxlength="160"></textarea>
+          </label>
+          <p class="profile-edit-status" id="profileEditStatus" role="status" aria-live="polite"></p>
+          <div class="profile-edit-actions">
+            <button class="profile-reset-button" id="resetProfileButton" type="button">Reset profile</button>
+            <button class="profile-cancel-button" id="cancelProfileEdit" type="button">Cancel</button>
+            <button class="profile-save-button" type="submit">Save changes</button>
+          </div>
+        </form>
+      </dialog>
+
+      <dialog class="profile-edit-dialog thumbnail-edit-dialog" id="thumbnailEditDialog" aria-labelledby="thumbnailEditTitle">
+        <form id="thumbnailEditForm">
+          <div class="profile-edit-heading">
+            <div>
+              <p class="profile-edit-kicker">Thumbnail</p>
+              <h2 id="thumbnailEditTitle">Edit thumbnail</h2>
+            </div>
+            <button class="icon-button profile-edit-close" id="closeThumbnailEdit" type="button" aria-label="Close thumbnail editor">×</button>
+          </div>
+          <label class="profile-edit-field" for="thumbnailTitleInput">
+            <span>Text on thumbnail</span>
+            <input id="thumbnailTitleInput" type="text" maxlength="70" autocomplete="off" />
+          </label>
+          <p class="thumbnail-edit-hint">Leave the text blank to remove it from this thumbnail.</p>
+          <button class="photo-edit-toggle thumbnail-change-photo" id="changeThumbnailPhotoButton" type="button">Change thumbnail photo</button>
+          <p class="profile-edit-status" id="thumbnailEditStatus" role="status" aria-live="polite"></p>
+          <div class="profile-edit-actions">
+            <button class="profile-reset-button" id="resetThumbnailButton" type="button">Reset this thumbnail</button>
+            <button class="profile-cancel-button" id="cancelThumbnailEdit" type="button">Close</button>
+            <button class="profile-save-button" type="submit">Save this thumbnail</button>
+          </div>
+        </form>
+      </dialog>
     </div>
 
     <script src="tiktok.js"></script>

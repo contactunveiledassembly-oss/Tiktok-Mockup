@@ -3,6 +3,16 @@ const FOLLOWER_COUNT = '212.3K';
 const LIKES_COUNT = '4.4M';
 const PROFILE_BIO = `His. †\nIG: @yaunah.jhanee\n💌 Kyaunahlove28@gmail.com 💌`;
 const PROFILE_PHOTO = 'assets/yaunah-profile.jpeg';
+const PROFILE_STORAGE_KEY = 'yaunah-tiktok-profile-v1';
+const DEFAULT_PROFILE_SETTINGS = {
+  displayName: 'Yaunah Jhanee †',
+  handle: 'yaunahjhanee',
+  bio: PROFILE_BIO,
+  profilePhoto: '',
+  thumbnailImages: {},
+  thumbnailTitles: {}
+};
+let profileSettings = { ...DEFAULT_PROFILE_SETTINGS, thumbnailImages: {} };
 const FRAME_MAP = {
   'start-here': PROFILE_PHOTO,
   'culture-in-christ': 'assets/frames/open-bible-pages.jpg',
@@ -528,9 +538,18 @@ posts.forEach((post) => {
     coverStyle: plan.style === 'editorial' ? 'editorial' : 'ordinary'
   });
 });
+const DEFAULT_THUMBNAIL_CONTENT = Object.fromEntries(posts.map((post) => [post.id, {
+  title: post.title || '',
+  image: FRAME_MAP[post.id],
+  titleStyle: post.titleStyle
+}]));
 
 const profileAvatar = document.getElementById('profileAvatar');
 const bioBlock = document.getElementById('bioBlock');
+const profileEditDialog = document.getElementById('profileEditDialog');
+const profileEditForm = document.getElementById('profileEditForm');
+const profileEditStatus = document.getElementById('profileEditStatus');
+const photoSaveStatus = document.getElementById('photoSaveStatus');
 const thumbGrid = document.getElementById('thumbGrid');
 const thumbnailImagePicker = document.getElementById('thumbnailImagePicker');
 const profilePhotoPicker = document.getElementById('profilePhotoPicker');
@@ -540,7 +559,15 @@ const prototypePlanningToggle = document.getElementById('prototypePlanningToggle
 const shootBlueprint = document.getElementById('shootBlueprint');
 const shootBlueprintClose = document.getElementById('shootBlueprintClose');
 const themeToggle = document.getElementById('themeToggle');
-let profilePhotoObjectUrl = '';
+const thumbnailEditDialog = document.getElementById('thumbnailEditDialog');
+const thumbnailEditForm = document.getElementById('thumbnailEditForm');
+const thumbnailEditStatus = document.getElementById('thumbnailEditStatus');
+const creatorWorkspace = document.getElementById('creatorWorkspace');
+const editProfileButton = document.getElementById('editProfileButton');
+const profileOptionsDialog = document.getElementById('profileOptionsDialog');
+const pendingThumbnailEdits = new Map();
+let editingThumbnailId = null;
+let isFollowing = false;
 
 function setTheme(isDark, persist = false) {
   document.body.classList.toggle('theme-dark', isDark);
@@ -590,11 +617,94 @@ function setProfilePhoto(filename) {
   }
 }
 
+function loadProfileSettings() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(PROFILE_STORAGE_KEY) || '{}');
+    profileSettings = {
+      ...DEFAULT_PROFILE_SETTINGS,
+      ...saved,
+      thumbnailImages: saved.thumbnailImages && typeof saved.thumbnailImages === 'object'
+        ? saved.thumbnailImages
+        : {},
+      thumbnailTitles: saved.thumbnailTitles && typeof saved.thumbnailTitles === 'object'
+        ? saved.thumbnailTitles
+        : {}
+    };
+  } catch (error) {
+    profileSettings = { ...DEFAULT_PROFILE_SETTINGS, thumbnailImages: {}, thumbnailTitles: {} };
+  }
+}
+
+function saveProfileSettings(settings = profileSettings) {
+  try {
+    localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(settings));
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+function applySavedProfileSettings() {
+  const handle = `@${profileSettings.handle}`;
+  const displayName = document.querySelector('.display-name');
+  if (displayName) displayName.textContent = profileSettings.displayName;
+  document.querySelectorAll('.handle-row, .topbar-username, .video-author span, .caption-user').forEach((node) => {
+    node.textContent = handle;
+  });
+  const musicTitle = document.querySelector('.music-meta strong');
+  if (musicTitle) musicTitle.textContent = profileSettings.displayName;
+  setBioText();
+  setProfilePhoto(profileSettings.profilePhoto || PROFILE_PHOTO);
+  posts.forEach((post) => {
+    const defaults = DEFAULT_THUMBNAIL_CONTENT[post.id];
+    const hasTitleOverride = Object.prototype.hasOwnProperty.call(profileSettings.thumbnailTitles, post.id);
+    post.title = hasTitleOverride ? profileSettings.thumbnailTitles[post.id] : defaults.title;
+    post.titleStyle = hasTitleOverride && defaults.titleStyle === 'hidden' && post.title
+      ? 'plain'
+      : defaults.titleStyle;
+    post.customImage = profileSettings.thumbnailImages[post.id] || defaults.image;
+  });
+}
+
+function openProfileEditor() {
+  document.getElementById('profileNameInput').value = profileSettings.displayName;
+  document.getElementById('profileHandleInput').value = profileSettings.handle;
+  document.getElementById('profileBioInput').value = profileSettings.bio;
+  profileEditStatus.textContent = '';
+  profileEditDialog.showModal();
+}
+
+async function imageFileToDataUrl(file) {
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const image = await new Promise((resolve, reject) => {
+      const element = new Image();
+      element.onload = () => resolve(element);
+      element.onerror = reject;
+      element.src = objectUrl;
+    });
+    const scale = Math.min(1, 1200 / Math.max(image.naturalWidth, image.naturalHeight));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+    canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+    canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.82));
+    if (!blob) throw new Error('This image could not be prepared.');
+    return await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
 function applyDefaultRealAssetMap() {
   posts.forEach((post) => {
     post.customImage = FRAME_MAP[post.id];
   });
-  setProfilePhoto(PROFILE_PHOTO);
 }
 
 function setPlanningMode(isOpen) {
@@ -608,42 +718,64 @@ function setPlanningMode(isOpen) {
 }
 
 if (thumbnailImagePicker) {
-  thumbnailImagePicker.addEventListener('change', (event) => {
+  thumbnailImagePicker.addEventListener('change', async (event) => {
     const file = event.target.files && event.target.files[0];
     if (!file) return;
 
     const postIndex = Number(thumbnailImagePicker.dataset.postIndex || 0);
     const post = posts[postIndex];
-    if (post.uploadedImageUrl) URL.revokeObjectURL(post.uploadedImageUrl);
-    post.uploadedImageUrl = URL.createObjectURL(file);
-    post.customImage = post.uploadedImageUrl;
-    post.imageSize = 'cover';
-    post.imagePosition = 'center center';
-    renderThumbGrid();
-    thumbnailImagePicker.value = '';
-    delete thumbnailImagePicker.dataset.postIndex;
+    const pending = getPendingThumbnailEdit(post);
+    thumbnailEditStatus.textContent = 'Preparing photo…';
+    try {
+      pending.customImage = await imageFileToDataUrl(file);
+      pending.imageDirty = true;
+      post.customImage = pending.customImage;
+      post.imageSize = 'cover';
+      post.imagePosition = 'center center';
+      renderThumbGrid();
+      thumbnailEditStatus.textContent = 'Photo preview updated. Save this thumbnail or use Save all.';
+      updateThumbnailSaveControls();
+    } catch (error) {
+      thumbnailEditStatus.textContent = error.message || 'Could not load this photo.';
+    } finally {
+      thumbnailImagePicker.value = '';
+      delete thumbnailImagePicker.dataset.postIndex;
+    }
   });
 }
 
 if (profilePhotoPicker) {
-  profilePhotoPicker.addEventListener('change', (event) => {
+  profilePhotoPicker.addEventListener('change', async (event) => {
     const file = event.target.files && event.target.files[0];
     if (!file) return;
 
-    if (profilePhotoObjectUrl) URL.revokeObjectURL(profilePhotoObjectUrl);
-    profilePhotoObjectUrl = URL.createObjectURL(file);
-    setProfilePhoto(profilePhotoObjectUrl);
-    profilePhotoPicker.value = '';
+    const previous = profileSettings.profilePhoto;
+    if (photoSaveStatus) photoSaveStatus.textContent = 'Saving profile photo…';
+    try {
+      profileSettings.profilePhoto = await imageFileToDataUrl(file);
+      if (!saveProfileSettings()) throw new Error('Browser storage is full. Try a smaller image.');
+      setProfilePhoto(profileSettings.profilePhoto);
+      if (photoSaveStatus) photoSaveStatus.textContent = 'Profile photo saved in this browser.';
+    } catch (error) {
+      profileSettings.profilePhoto = previous;
+      if (photoSaveStatus) photoSaveStatus.textContent = error.message || 'Could not save this photo.';
+    } finally {
+      profilePhotoPicker.value = '';
+    }
   });
 }
 
 if (photoEditToggle) {
   photoEditToggle.addEventListener('click', () => {
     const isEditing = !document.body.classList.contains('photo-edit-mode');
+    if (!isEditing && hasPendingThumbnailEdits()) {
+      photoSaveStatus.textContent = 'Save or reset your pending thumbnail changes before finishing.';
+      return;
+    }
     document.body.classList.toggle('photo-edit-mode', isEditing);
     photoEditToggle.setAttribute('aria-pressed', String(isEditing));
-    photoEditToggle.querySelector('span').textContent = isEditing ? 'Done' : 'Edit photos';
-    if (profilePhotoButton) profilePhotoButton.hidden = !isEditing;
+    photoEditToggle.querySelector('span').textContent = isEditing ? 'Done' : 'Edit thumbnails';
+    updateThumbnailSaveControls();
   });
 }
 
@@ -651,10 +783,246 @@ if (profilePhotoButton && profilePhotoPicker) {
   profilePhotoButton.addEventListener('click', () => profilePhotoPicker.click());
 }
 
-function openThumbnailPicker(postIndex) {
-  if (!thumbnailImagePicker) return;
+function getPendingThumbnailEdit(post){
+  if(!pendingThumbnailEdits.has(post.id)){
+    pendingThumbnailEdits.set(post.id, {
+      title: post.title || '',
+      customImage: post.customImage,
+      titleDirty: false,
+      imageDirty: false
+    });
+  }
+  return pendingThumbnailEdits.get(post.id);
+}
+
+function hasPendingThumbnailEdits(){
+  return Array.from(pendingThumbnailEdits.values()).some(edit => edit.titleDirty || edit.imageDirty);
+}
+
+function updateThumbnailSaveControls(){
+  const saveAll = document.getElementById('saveAllThumbnailsButton');
+  if(saveAll) saveAll.disabled = !hasPendingThumbnailEdits();
+}
+
+function openThumbnailEditor(postIndex){
+  const post = posts[postIndex];
+  if(!post) return;
+  editingThumbnailId = post.id;
+  getPendingThumbnailEdit(post);
+  document.getElementById('thumbnailEditTitle').textContent = 'Edit ' + (post.title || post.caption || 'thumbnail');
+  document.getElementById('thumbnailTitleInput').value = pendingThumbnailEdits.get(post.id).title;
+  thumbnailEditStatus.textContent = '';
+  thumbnailEditDialog.showModal();
+}
+
+function commitThumbnailEdits(postIds){
+  const edits = postIds.map(id => [id, pendingThumbnailEdits.get(id)]).filter(([, edit]) => edit && (edit.titleDirty || edit.imageDirty));
+  if(!edits.length) return false;
+  const nextSettings = {
+    ...profileSettings,
+    thumbnailImages: { ...profileSettings.thumbnailImages },
+    thumbnailTitles: { ...profileSettings.thumbnailTitles }
+  };
+  edits.forEach(([id, edit]) => {
+    const defaults = DEFAULT_THUMBNAIL_CONTENT[id];
+    if(edit.titleDirty){
+      if(edit.title === defaults.title) delete nextSettings.thumbnailTitles[id];
+      else nextSettings.thumbnailTitles[id] = edit.title;
+    }
+    if(edit.imageDirty){
+      if(edit.customImage === defaults.image) delete nextSettings.thumbnailImages[id];
+      else nextSettings.thumbnailImages[id] = edit.customImage;
+    }
+  });
+  if(!saveProfileSettings(nextSettings)){
+    const message = 'Browser storage is full. Try a smaller image.';
+    thumbnailEditStatus.textContent = message;
+    photoSaveStatus.textContent = message;
+    return false;
+  }
+  profileSettings = nextSettings;
+  edits.forEach(([id]) => pendingThumbnailEdits.delete(id));
+  applySavedProfileSettings();
+  renderThumbGrid();
+  updateThumbnailSaveControls();
+  return true;
+}
+
+document.getElementById('thumbnailTitleInput').addEventListener('input', (event) => {
+  const post = posts.find(item => item.id === editingThumbnailId);
+  if(!post) return;
+  const edit = getPendingThumbnailEdit(post);
+  edit.title = event.target.value;
+  edit.titleDirty = edit.title !== (Object.prototype.hasOwnProperty.call(profileSettings.thumbnailTitles, post.id)
+    ? profileSettings.thumbnailTitles[post.id]
+    : DEFAULT_THUMBNAIL_CONTENT[post.id].title);
+  post.title = edit.title;
+  if(edit.title && post.titleStyle === 'hidden') post.titleStyle = 'plain';
+  else if(!edit.title && DEFAULT_THUMBNAIL_CONTENT[post.id].titleStyle === 'hidden') post.titleStyle = 'hidden';
+  renderThumbGrid();
+  updateThumbnailSaveControls();
+});
+
+document.getElementById('changeThumbnailPhotoButton').addEventListener('click', () => {
+  const postIndex = posts.findIndex(item => item.id === editingThumbnailId);
+  if(postIndex < 0) return;
   thumbnailImagePicker.dataset.postIndex = String(postIndex);
   thumbnailImagePicker.click();
+});
+
+document.getElementById('closeThumbnailEdit').addEventListener('click', () => thumbnailEditDialog.close());
+document.getElementById('cancelThumbnailEdit').addEventListener('click', () => thumbnailEditDialog.close());
+thumbnailEditDialog.addEventListener('click', event => {
+  if(event.target === thumbnailEditDialog) thumbnailEditDialog.close();
+});
+thumbnailEditForm.addEventListener('submit', event => {
+  event.preventDefault();
+  if(!commitThumbnailEdits([editingThumbnailId])){
+    if(!hasPendingThumbnailEdits()) thumbnailEditStatus.textContent = 'No thumbnail changes to save.';
+    return;
+  }
+  thumbnailEditDialog.close();
+  photoSaveStatus.textContent = 'Thumbnail saved in this browser.';
+});
+
+document.getElementById('resetThumbnailButton').addEventListener('click', () => {
+  const post = posts.find(item => item.id === editingThumbnailId);
+  if(!post) return;
+  const defaults = DEFAULT_THUMBNAIL_CONTENT[post.id];
+  const nextSettings = {
+    ...profileSettings,
+    thumbnailImages: { ...profileSettings.thumbnailImages },
+    thumbnailTitles: { ...profileSettings.thumbnailTitles }
+  };
+  delete nextSettings.thumbnailImages[post.id];
+  delete nextSettings.thumbnailTitles[post.id];
+  if(!saveProfileSettings(nextSettings)){
+    thumbnailEditStatus.textContent = 'Could not reset this thumbnail in browser storage.';
+    return;
+  }
+  profileSettings = nextSettings;
+  pendingThumbnailEdits.delete(post.id);
+  post.title = defaults.title;
+  post.titleStyle = defaults.titleStyle;
+  post.customImage = defaults.image;
+  delete post.imageSize;
+  delete post.imagePosition;
+  renderThumbGrid();
+  updateThumbnailSaveControls();
+  thumbnailEditDialog.close();
+  photoSaveStatus.textContent = 'Thumbnail restored to its original photo and text.';
+});
+
+document.getElementById('saveAllThumbnailsButton').addEventListener('click', () => {
+  const ids = Array.from(pendingThumbnailEdits.keys());
+  if(!hasPendingThumbnailEdits()){
+    photoSaveStatus.textContent = 'There are no unsaved thumbnail changes.';
+    return;
+  }
+  if(!commitThumbnailEdits(ids)) return;
+  photoSaveStatus.textContent = 'All changed thumbnails saved in this browser.';
+});
+
+document.getElementById('resetAllThumbnailsButton').addEventListener('click', () => {
+  if(!window.confirm('Reset every thumbnail photo and text overlay to its original version? Your profile photo and profile details will stay as they are.')) return;
+  const nextSettings = { ...profileSettings, thumbnailImages: {}, thumbnailTitles: {} };
+  if(!saveProfileSettings(nextSettings)){
+    photoSaveStatus.textContent = 'Could not reset thumbnails in browser storage.';
+    return;
+  }
+  profileSettings = nextSettings;
+  pendingThumbnailEdits.clear();
+  applyDefaultRealAssetMap();
+  applySavedProfileSettings();
+  renderThumbGrid();
+  updateThumbnailSaveControls();
+  photoSaveStatus.textContent = 'All thumbnails restored to their original photos and text.';
+});
+
+function setCreatorMode(enabled){
+  if(!enabled && hasPendingThumbnailEdits()){
+    photoSaveStatus.textContent = 'Save all or reset the staged thumbnail changes before switching to follower view.';
+    return;
+  }
+  document.body.classList.toggle('creator-mode', enabled);
+  creatorWorkspace.hidden = !enabled;
+  editProfileButton.textContent = enabled ? 'Follower preview' : isFollowing ? 'Following' : 'Follow';
+  editProfileButton.setAttribute('aria-label', enabled ? 'Switch to follower view' : isFollowing ? 'Unfollow this profile' : 'Follow this profile');
+  editProfileButton.setAttribute('aria-pressed', String(!enabled && isFollowing));
+  if(!enabled && document.body.classList.contains('photo-edit-mode')){
+    document.body.classList.remove('photo-edit-mode');
+    photoEditToggle.setAttribute('aria-pressed', 'false');
+    photoEditToggle.querySelector('span').textContent = 'Edit thumbnails';
+  }
+}
+
+editProfileButton.addEventListener('click', () => {
+  if(document.body.classList.contains('creator-mode')){
+    setCreatorMode(false);
+    return;
+  }
+  isFollowing = !isFollowing;
+  editProfileButton.textContent = isFollowing ? 'Following' : 'Follow';
+  editProfileButton.setAttribute('aria-label', isFollowing ? 'Unfollow this profile' : 'Follow this profile');
+  editProfileButton.setAttribute('aria-pressed', String(isFollowing));
+});
+document.getElementById('profileOptionsButton').addEventListener('click', () => profileOptionsDialog.showModal());
+document.getElementById('closeProfileOptions').addEventListener('click', () => profileOptionsDialog.close());
+profileOptionsDialog.addEventListener('click', event => {
+  if(event.target === profileOptionsDialog) profileOptionsDialog.close();
+});
+document.getElementById('enterCreatorModeButton').addEventListener('click', () => {
+  profileOptionsDialog.close();
+  setCreatorMode(true);
+});
+document.getElementById('editProfileDetailsButton').addEventListener('click', openProfileEditor);
+document.getElementById('closeProfileEdit').addEventListener('click', () => profileEditDialog.close());
+document.getElementById('cancelProfileEdit').addEventListener('click', () => profileEditDialog.close());
+profileEditDialog.addEventListener('click', (event) => {
+  if (event.target === profileEditDialog) profileEditDialog.close();
+});
+profileEditForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  const displayName = document.getElementById('profileNameInput').value.trim();
+  const handle = document.getElementById('profileHandleInput').value.trim().replace(/^@/, '');
+  const bio = document.getElementById('profileBioInput').value.trim();
+  if (!displayName) {
+    profileEditStatus.textContent = 'Please enter a display name.';
+    return;
+  }
+  if (!/^[A-Za-z0-9._]{2,24}$/.test(handle)) {
+    profileEditStatus.textContent = 'Use 2–24 letters, numbers, periods, or underscores for the username.';
+    return;
+  }
+  const nextSettings = { ...profileSettings, displayName, handle, bio };
+  if (!saveProfileSettings(nextSettings)) {
+    profileEditStatus.textContent = 'Could not save changes in this browser. Free up storage and try again.';
+    return;
+  }
+  profileSettings = nextSettings;
+  applySavedProfileSettings();
+  profileEditDialog.close();
+});
+document.getElementById('resetProfileButton').addEventListener('click', () => {
+  if (!window.confirm('Reset the profile text and all uploaded profile photos to the original version? This cannot be undone.')) return;
+  try {
+    localStorage.removeItem(PROFILE_STORAGE_KEY);
+  } catch (error) {
+    profileEditStatus.textContent = 'Could not reset this browser’s saved profile.';
+    return;
+  }
+  profileSettings = { ...DEFAULT_PROFILE_SETTINGS, thumbnailImages: {} };
+  pendingThumbnailEdits.clear();
+  applyDefaultRealAssetMap();
+  applySavedProfileSettings();
+  renderThumbGrid();
+  updateThumbnailSaveControls();
+  profileEditDialog.close();
+  if (photoSaveStatus) photoSaveStatus.textContent = 'Profile reset to its original version.';
+});
+
+function openThumbnailPicker(postIndex) {
+  openThumbnailEditor(postIndex);
 }
 
 if (thumbGrid) {
@@ -695,8 +1063,14 @@ function formatCount(value) {
   return value;
 }
 
+function escapeHtml(value){
+  return String(value).replace(/[&<>"']/g, character => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  })[character]);
+}
+
 function setBioText() {
-  bioBlock.textContent = PROFILE_BIO;
+  bioBlock.textContent = profileSettings.bio;
 }
 
 function setStats() {
@@ -713,29 +1087,33 @@ function imageStyleFromPost(post) {
 
 function renderThumbGrid() {
   thumbGrid.innerHTML = posts.map((post, index) => {
-    const showTitle = !!post.title && post.titleStyle !== 'hidden';
-    const titleVariant = post.titleStyle || 'plain';
+    const hasTitleOverride = Object.prototype.hasOwnProperty.call(profileSettings.thumbnailTitles, post.id) || pendingThumbnailEdits.has(post.id);
+    const showTitle = !!post.title && (post.titleStyle !== 'hidden' || hasTitleOverride);
+    const titleVariant = post.titleStyle === 'hidden' && hasTitleOverride ? 'plain' : post.titleStyle || 'plain';
     const kickerMarkup = post.kicker ? `<span class="thumb__kicker">${post.kicker}</span>` : '';
-    const titleMarkup = showTitle ? `<div class="thumb__overlay thumb__overlay--${titleVariant}">${kickerMarkup}<div class="thumb__title thumb__title--${titleVariant}">${post.title}</div></div>` : '';
+    const titleMarkup = showTitle ? `<div class="thumb__overlay thumb__overlay--${titleVariant}">${kickerMarkup}<div class="thumb__title thumb__title--${titleVariant}">${escapeHtml(post.title)}</div></div>` : '';
     const pinnedMarkup = post.pinned ? '<span class="thumb__pin">Pinned</span>' : '';
     const noTextClass = !showTitle ? 'thumb--no-text' : '';
     const photoClass = 'thumb--real-photo';
     const photoMarkup = post.customImage ? `<span class="thumb__photo" style="${imageStyleFromPost(post)}"></span>` : '';
+    const edit = pendingThumbnailEdits.get(post.id);
+    const unsavedMarkup = edit && (edit.titleDirty || edit.imageDirty) ? '<span class="thumb-unsaved-badge">Unsaved</span>' : '';
     const replyMarkup = post.id === 'how-to-discern'
       ? '<span class="thumb__reply-comment"><strong>Replying to a comment</strong> How do I know if this teaching is biblical?</span>'
       : '';
 
     return `
       <div class="thumb-item">
-        <button class="thumb ${noTextClass} ${photoClass} thumb--${post.id}" type="button" data-index="${index}" data-post-id="${post.id}" data-scene="${post.scene}" data-cover="${post.coverStyle}" aria-label="${post.title || post.caption}">
+        <button class="thumb ${noTextClass} ${photoClass} thumb--${post.id}" type="button" data-index="${index}" data-post-id="${post.id}" data-scene="${post.scene}" data-cover="${post.coverStyle}" aria-label="${escapeHtml(post.title || post.caption)}">
           ${photoMarkup}
           ${replyMarkup}
           ${pinnedMarkup}
+          ${unsavedMarkup}
           <span class="thumb__count">${post.viewCount}</span>
           ${titleMarkup}
           <span class="thumb__duration">${post.duration}</span>
         </button>
-        <button class="thumb-edit-button" type="button" data-post-index="${index}" aria-label="Change photo for ${post.title || post.caption}">
+        <button class="thumb-edit-button" type="button" data-post-index="${index}" aria-label="Edit thumbnail for ${escapeHtml(post.title || post.caption)}">
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h2l1.2-1.5h4.6L15.5 6h2A2.5 2.5 0 0 1 20 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5v-9Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="12.5" r="3.2" stroke="currentColor" stroke-width="1.8"/></svg>
         </button>
       </div>
@@ -969,10 +1347,12 @@ function bindVideoControls() {
   }, { passive: true });
 }
 
-setBioText();
+loadProfileSettings();
 setStats();
 applyDefaultRealAssetMap();
+applySavedProfileSettings();
 renderThumbGrid();
+updateThumbnailSaveControls();
 bindVideoControls();
 
 if (profileView) {

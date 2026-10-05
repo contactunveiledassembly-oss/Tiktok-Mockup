@@ -329,6 +329,61 @@ body.theme-dark .theme-toggle .theme-icon-sun {
   stroke-width: 2.2;
 }
 
+.profile-edit-dialog {
+  width: min(440px, calc(100vw - 28px));
+  max-height: min(90vh, 680px);
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: 0 24px 70px rgba(0,0,0,.24);
+}
+.profile-options-dialog { width: min(340px, calc(100vw - 28px)); }
+.profile-options-dialog .profile-creator-entry { width: 100%; min-height: 42px; margin-top: 18px; border: 0; border-radius: 6px; font: 700 .82rem 'Inter', sans-serif; }
+.profile-edit-dialog::backdrop { background: rgba(18,17,18,.48); backdrop-filter: blur(3px); }
+.profile-edit-dialog form { display: grid; gap: 16px; }
+.profile-edit-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.profile-edit-kicker { margin: 0 0 4px; color: var(--muted); font-size: .68rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.profile-edit-heading h2 { margin: 0; font-family: 'Playfair Display', serif; font-size: 1.45rem; }
+.profile-edit-close { flex: 0 0 34px; width: 34px; height: 34px; border-color: var(--line); }
+.profile-edit-field { display: grid; gap: 7px; color: var(--muted); font-size: .75rem; font-weight: 700; }
+.profile-edit-field input,.profile-edit-field textarea {
+  width: 100%; min-width: 0; border: 1px solid var(--line); border-radius: 6px;
+  padding: 11px 12px; background: var(--bg); color: var(--text); font: 500 .92rem/1.45 'Inter', sans-serif;
+}
+.profile-edit-field textarea { resize: vertical; }
+.profile-edit-field input:focus,.profile-edit-field textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.profile-handle-input { display: flex; align-items: center; gap: 8px; }
+.profile-handle-input > span { color: var(--muted); font-size: .9rem; }
+.profile-edit-status,.photo-save-status { min-height: 1.2em; margin: 0; color: var(--muted); font-size: .74rem; line-height: 1.4; }
+.profile-edit-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.profile-edit-actions button { min-height: 38px; padding: 0 12px; border: 1px solid var(--line); border-radius: 6px; font-size: .76rem; font-weight: 700; }
+.profile-reset-button { margin-right: auto; background: transparent; color: var(--muted); }
+.profile-cancel-button { background: var(--panel-alt); color: var(--text); }
+.profile-save-button { background: var(--text); color: var(--panel); }
+.photo-save-status { text-align: right; }
+.creator-workspace {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-alt);
+}
+.creator-workspace[hidden] { display: none; }
+.creator-workspace-heading h2 { margin: 0; font-family: 'Playfair Display', serif; font-size: 1.1rem; }
+.creator-workspace-heading .profile-edit-kicker { margin-bottom: 3px; }
+.creator-workspace-actions { display: grid; gap: 8px; }
+.creator-workspace .photo-edit-tools { justify-content: flex-start; min-height: 0; }
+.creator-workspace .photo-save-status { text-align: left; }
+body.theme-dark .profile-edit-dialog { background: #18191d; color: #f5f5f6; border-color: rgba(255,255,255,.12); }
+body.theme-dark .profile-edit-field input,body.theme-dark .profile-edit-field textarea { background: #23242a; color: #f5f5f6; border-color: rgba(255,255,255,.14); }
+body.theme-dark .profile-cancel-button { background: #292a30; color: #f5f5f6; }
+body.theme-dark .profile-save-button { background: #f5f5f6; color: #17181b; }
+body.theme-dark .creator-workspace { background: #1a1b20; border-color: rgba(255,255,255,.12); }
+
 .photo-assign-hint {
   margin-top: 10px;
   color: rgba(17,18,20,0.7);
@@ -489,11 +544,14 @@ body.theme-dark .theme-toggle .theme-icon-sun {
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 8px;
 }
+.creator-workspace .photo-edit-tools { justify-content: flex-start; min-height: 0; }
 
 .photo-edit-toggle,
-.profile-photo-button {
+.profile-photo-button,
+.thumbnail-bulk-button {
   min-height: 32px;
   display: inline-flex;
   align-items: center;
@@ -507,6 +565,7 @@ body.theme-dark .theme-toggle .theme-icon-sun {
   font-size: 0.72rem;
   font-weight: 600;
 }
+.photo-edit-tools [hidden] { display: none; }
 
 .photo-edit-toggle svg {
   width: 17px;
@@ -517,6 +576,13 @@ body.theme-dark .theme-toggle .theme-icon-sun {
   background: #222326;
   color: #fff;
 }
+.thumbnail-bulk-button { border-radius: 999px; }
+.thumbnail-bulk-button:disabled { cursor: not-allowed; opacity: .45; }
+.thumbnail-reset-all { color: #9b2f43; }
+.thumbnail-edit-hint { margin: -10px 0 0; color: var(--muted); font-size: .74rem; line-height: 1.45; }
+.thumbnail-change-photo { justify-self: start; }
+body.theme-dark .thumbnail-bulk-button { border-color: rgba(255,255,255,.16); background: #25262a; color: #f5f5f6; }
+body.theme-dark .thumbnail-reset-all { color: #ff9eac; }
 
 .thumb-item {
   position: relative;
@@ -543,6 +609,21 @@ body.theme-dark .theme-toggle .theme-icon-sun {
 .thumb-edit-button svg {
   width: 18px;
   height: 18px;
+}
+
+.thumb-unsaved-badge {
+  position: absolute;
+  top: 9px;
+  left: 8px;
+  z-index: 6;
+  padding: 4px 6px;
+  border-radius: 4px;
+  background: rgba(254,44,85,.94);
+  color: #fff;
+  font-size: .53rem;
+  font-weight: 700;
+  line-height: 1;
+  text-transform: uppercase;
 }
 
 .photo-edit-mode .thumb-edit-button {
