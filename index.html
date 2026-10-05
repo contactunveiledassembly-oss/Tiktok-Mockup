@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="TikTok-style profile prototype for @yaunahjhanee" />
+    <title>@yaunahjhanee</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="tiktok.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <div class="profile-page" id="profileView">
+        <div class="status-bar">
+          <div class="time">7:07</div>
+          <div class="status-icons" aria-label="Phone status">
+            <span class="signal-bars"></span>
+            <span class="wifi-icon"></span>
+            <span class="battery-icon"></span>
+          </div>
+        </div>
+
+        <header class="profile-topbar">
+          <button class="icon-button" type="button" aria-label="Back">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="topbar-username">@yaunahjhanee</div>
+          <div class="header-actions">
+            <button class="icon-button theme-toggle" id="themeToggle" type="button" aria-label="Switch to dark mode" title="Switch to dark mode" aria-pressed="false">
+              <svg class="theme-icon-moon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20.2 15.4A8.5 8.5 0 0 1 8.6 3.8 8.5 8.5 0 1 0 20.2 15.4Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <svg class="theme-icon-sun" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.8"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </button>
+            <button class="icon-button" type="button" aria-label="Notifications">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5m6 0a3 3 0 1 1-6 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <button class="icon-button" type="button" aria-label="Messages">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M5 19.5V7.8A2.8 2.8 0 0 1 7.8 5h8.4A2.8 2.8 0 0 1 19 7.8v6.4A2.8 2.8 0 0 1 16.2 17H9l-4 2.5Zm4-8h6m-6 3h4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+        </header>
+
+        <main class="profile-shell">
+          <section class="profile-summary">
+            <div class="profile-copy">
+              <h1 class="display-name">Yaunah Jhanee †</h1>
+              <div class="handle-row">@yaunahjhanee</div>
+
+              <div class="profile-stats">
+                <div class="stat"><strong id="followingCount">739</strong><span>Following</span></div>
+                <div class="stat"><strong id="followerCount">212.3K</strong><span>Followers</span></div>
+                <div class="stat"><strong id="likesCount">4.4M</strong><span>Likes</span></div>
+              </div>
+            </div>
+
+            <div class="profile-avatar-wrap">
+              <div class="profile-avatar" id="profileAvatar"></div>
+            </div>
+          </section>
+
+          <div class="action-row">
+            <button class="primary-button" type="button">Follow</button>
+            <button class="secondary-button" type="button">Message</button>
+            <button class="ghost-icon" type="button" aria-label="More options">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M7 12h.01M12 12h.01M17 12h.01" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+
+          <div class="bio-block" id="bioBlock"></div>
+
+          <div class="tabs" aria-label="Profile tabs">
+            <button class="tab active" type="button" aria-label="Video grid">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M4 4h6v6H4zm10 0h6v6h-6zm-10 10h6v6H4zm10 0h6v6h-6z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+            </button>
+            <button class="tab" type="button" aria-label="Reposts">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M7 8.5V6.2A2.2 2.2 0 0 1 9.2 4h9.6A2.2 2.2 0 0 1 21 6.2v9.6A2.2 2.2 0 0 1 18.8 18H16.5M8 15.5v2.3A2.2 2.2 0 0 1 5.8 20H4.2A2.2 2.2 0 0 1 2 17.8V8.2A2.2 2.2 0 0 1 4.2 6h2.3M15 9l4-4m-4 4h4V5M9 15l-4 4m4-4H5v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <button class="tab" type="button" aria-label="Favorites">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M7 4h10a2 2 0 0 1 2 2v14l-7-4-7 4V6a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+
+          <div class="photo-edit-tools">
+            <button class="photo-edit-toggle" id="photoEditToggle" type="button" aria-pressed="false">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h2l1.2-1.5h4.6L15.5 6h2A2.5 2.5 0 0 1 20 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5v-9Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="12.5" r="3.2" stroke="currentColor" stroke-width="1.8"/></svg>
+              <span>Edit photos</span>
+            </button>
+            <button class="profile-photo-button" id="profilePhotoButton" type="button" hidden>Change profile photo</button>
+            <input id="profilePhotoPicker" type="file" accept="image/*" hidden />
+            <input id="thumbnailImagePicker" type="file" accept="image/*" hidden />
+          </div>
+
+          <div class="thumb-grid" id="thumbGrid" aria-live="polite"></div>
+        </main>
+      </div>
+
+      <nav class="bottom-nav" aria-label="TikTok navigation">
+        <button class="bottom-nav-item" type="button" aria-label="Home">
+          <svg viewBox="0 0 24 24" fill="none"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1V10Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+          <span>Home</span>
+        </button>
+        <button class="bottom-nav-item" type="button" aria-label="Friends">
+          <svg viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 20v-1.5A4.5 4.5 0 0 1 8 14h2a4.5 4.5 0 0 1 4.5 4.5V20M16 5.5a3 3 0 0 1 0 5.8M17 14h1a3.5 3.5 0 0 1 3.5 3.5V20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <span>Friends</span>
+        </button>
+        <button class="bottom-nav-create" type="button" aria-label="Create">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+        </button>
+        <button class="bottom-nav-item" type="button" aria-label="Inbox">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M4 5h16v14H4zM4 14h4l1.5 2h5L16 14h4" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+          <span>Inbox</span>
+        </button>
+        <button class="bottom-nav-item active" type="button" aria-label="Profile" aria-current="page">
+          <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.5" stroke="currentColor" stroke-width="1.8"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <span>Profile</span>
+        </button>
+      </nav>
+
+      <div class="video-overlay" id="videoOverlay" aria-live="polite">
+        <div class="video-stage" id="videoStage" aria-hidden="true">
+          <div class="video-scrim"></div>
+          <div class="video-topbar">
+            <div class="video-author">
+              <div class="mini-avatar"></div>
+              <span>@yaunahjhanee</span>
+            </div>
+            <div class="prototype-topbar-tools">
+              <button class="close-video" type="button" aria-label="Close video">✕</button>
+            </div>
+          </div>
+
+          <div class="video-side-actions">
+            <button class="action-stack heart-action" type="button" aria-label="Like video">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M12 20.5s-7.5-4.6-9.3-8.6A5.7 5.7 0 0 1 12 4.5a5.7 5.7 0 0 1 9.3 7.4c-1.8 4-9.3 8.6-9.3 8.6Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+              <span class="stack-label" id="overlayHeartCount">0</span>
+            </button>
+            <button class="action-stack comment-action" type="button" aria-label="Open comments">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M7 18.5L3.5 21V6.5A2.5 2.5 0 0 1 6 4h12a2.5 2.5 0 0 1 2.5 2.5v8A2.5 2.5 0 0 1 18 17H7Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+              <span class="stack-label" id="overlayCommentCount">0</span>
+            </button>
+            <button class="action-stack save-action" type="button" aria-label="Save post">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M7 4.5h10a1.5 1.5 0 0 1 1.5 1.5v14l-6.5-4-6.5 4V6A1.5 1.5 0 0 1 7 4.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+              <span class="stack-label" id="overlaySaveCount">0</span>
+            </button>
+            <button class="action-stack share-action" type="button" aria-label="Share post">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M15 8l-6 4 6 4M18 5.5A2.5 2.5 0 1 1 18 10.5A2.5 2.5 0 0 1 18 5.5Zm-12 8A2.5 2.5 0 1 1 6 18.5A2.5 2.5 0 0 1 6 13.5Zm12 5A2.5 2.5 0 1 1 18 23.5A2.5 2.5 0 0 1 18 18.5Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span class="stack-label" id="overlayShareCount">0</span>
+            </button>
+          </div>
+
+          <div class="video-bottom-ui">
+            <div class="video-caption" id="videoCaptionBlock">
+              <div class="caption-user">@yaunahjhanee</div>
+              <div class="caption-text" id="videoCaptionText">Let’s teach the truth with context.</div>
+            </div>
+            <div class="caption-sequence" id="captionSequence">The question is not simply, “Is this what Christians do?”</div>
+            <div class="music-row">
+              <span class="music-disk"></span>
+              <div class="music-meta">
+                <span>Original audio</span>
+                <strong>Yaunah Jhanee †</strong>
+              </div>
+            </div>
+            <div class="progress-track">
+              <span class="progress-fill" id="videoProgressFill"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="comment-sheet" id="commentSheet" aria-label="Comments">
+        <div class="comment-sheet-handle"></div>
+        <div class="comment-header">
+          <h3>Comments</h3>
+          <button class="close-comments" type="button" aria-label="Close comments">Close</button>
+        </div>
+        <div class="comment-list" id="commentList"></div>
+      </aside>
+    </div>
+
+    <script src="tiktok.js"></script>
+  </body>
+</html>
