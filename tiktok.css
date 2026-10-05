@@ -1805,6 +1805,20 @@ body.theme-dark .photo-edit-toggle[aria-pressed="true"] {
   color: #17181b;
 }
 
+.thumb-grid .thumb__title {
+  font-family: 'Inter', sans-serif;
+  letter-spacing: 0;
+}
+
+.thumb-grid .thumb__title--editorial {
+  font-weight: 800;
+  line-height: 1.02;
+}
+
+.thumb-grid .thumb__title--plain {
+  font-weight: 800;
+}
+
 .video-stage {
   color: #fff;
 }
